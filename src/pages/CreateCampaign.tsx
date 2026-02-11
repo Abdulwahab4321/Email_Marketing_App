@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, X, Send, Save, Mail, Loader2, CheckCircle, AlertCircle, Upload, FileSpreadsheet } from 'lucide-react';
+import { PlusCircle, X, Send, Save, Mail, Loader2, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { useCampaigns } from '../context/CampaignContext';
 import { uploadEmailSheet } from '../services/api';
 

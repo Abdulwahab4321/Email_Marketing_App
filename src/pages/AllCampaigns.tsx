@@ -44,7 +44,7 @@ const ITEMS_PER_PAGE = 25;
 
 const AllCampaigns: React.FC = () => {
   const navigate = useNavigate();
-  const { campaigns, deleteCampaign, sendCampaign, loading } = useCampaigns();
+  const { campaigns, deleteCampaign, sendCampaign } = useCampaigns();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
