@@ -15,14 +15,17 @@ const SENDGRID_API_URL = 'https://api.sendgrid.com/v3/mail/send';
 // Data file path for storing campaigns
 const DATA_FILE = path.join(__dirname, 'data', 'campaigns.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-  fs.mkdirSync(path.join(__dirname, 'data'));
-}
-
-// Initialize data file if it doesn't exist
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+// Ensure data directory and file exist (don't crash if read-only env)
+try {
+  const dataDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+  }
+} catch (err) {
+  console.warn('Data dir init warning (using in-memory fallback):', err.message);
 }
 
 // Multer configuration for file uploads
@@ -73,6 +76,7 @@ app.use(express.json());
 // Helper function to read campaigns from file
 function readCampaigns() {
   try {
+    if (!fs.existsSync(DATA_FILE)) return [];
     const data = fs.readFileSync(DATA_FILE, 'utf8');
     return JSON.parse(data);
   } catch {
@@ -82,7 +86,11 @@ function readCampaigns() {
 
 // Helper function to write campaigns to file
 function writeCampaigns(campaigns) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(campaigns, null, 2));
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(campaigns, null, 2));
+  } catch (err) {
+    console.warn('writeCampaigns failed:', err.message);
+  }
 }
 
 // Helper function to send email via SendGrid API
@@ -106,6 +114,11 @@ async function sendEmailViaSendGrid(emailData) {
 }
 
 // Health check endpoint
+// Root - so Railway/proxy gets a response
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'email-marketing-api', message: 'Use /api/... endpoints' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
@@ -492,9 +505,9 @@ app.get('/api/campaign-stats/:campaignId', async (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Start server - listen on 0.0.0.0 so Railway can send traffic
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
   console.log(`SendGrid API URL: ${SENDGRID_API_URL}`);
   console.log(`SendGrid API configured: ${process.env.SENDGRID_API_KEY ? 'Yes' : 'No'}`);
 });
